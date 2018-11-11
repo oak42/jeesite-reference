@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	version="2.5">
+
+	<display-name>JeeSite</display-name>
+
+	<!-- Context ConfigLocation -->
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath*:/spring-context*.xml</param-value>
+	</context-param>
+	<listener>
+		<listener-class>com.thinkgem.jeesite.modules.sys.listener.WebContextListener</listener-class><!--【鸣】继承了org.springframework.web.context.ContextLoaderListener-->
+	</listener>
+	<listener>
+        <listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
+		<!--public class RequestContextListener extends Object
+		                                        implements ServletRequestListener
+		Servlet listener that exposes the request to the current thread, through both LocaleContextHolder and RequestContextHolder.
+		To be registered as listener in web.xml.
+		Alternatively, Spring's RequestContextFilter and Spring's DispatcherServlet also expose the same request context to the current thread.
+		In contrast to this listener, advanced options are available there (e.g. "threadContextInheritable").
+
+		This listener is mainly for use with third-party servlets, e.g. the JSF FacesServlet.
+		Within Spring's own web support, DispatcherServlet's processing is perfectly sufficient.-->
+	</listener>
+
+	<!--【鸣】org.springframework.web.filter.CharacterEncodingFilter extends OncePerRequestFilter
+	Servlet Filter that allows one to specify a character encoding for requests.
+	This is useful because current browsers typically do not set a character encoding even if specified in the HTML page or form.
+	This filter can either apply its encoding if the request does not already specify an encoding, or enforce this filter's encoding in any case ("forceEncoding"="true").
+	In the latter case, the encoding will also be applied as default response encoding (although this will usually be overridden by a full content type set in the view).
+	现在浏览器request都不带头的，若是在HttpServlet的doPost中，HttpServletRequest.getCharacterEncoding()返回null！...-->
+	<filter>
+		<filter-name>encodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+		<init-param>
+			<param-name>forceEncoding</param-name>
+			<param-value>true</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>encodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<!-- Apache Shiro -->
+	<!--【DelegatingFilterProxy】
+	Proxy for a standard Servlet Filter, delegating to a Spring-managed bean that implements the Filter interface.
+	Supports a "targetBeanName" filter init-param in web.xml, specifying the name of the target bean in the Spring application context.
+
+	web.xml will usually contain a DelegatingFilterProxy definition,
+	with the specified filter-name corresponding to a bean name in Spring's root application context.
+	All calls to the filter proxy will then be delegated to that bean in the Spring context,
+	which is required to implement the standard Servlet Filter interface.
+
+	This approach is particularly useful for Filter implementation with complex setup needs,
+	allowing to apply the full Spring bean definition machinery to Filter instances.
+	Alternatively, consider standard Filter setup in combination with looking up service beans from the Spring root application context.
+
+	NOTE: The lifecycle methods defined by the Servlet Filter interface will by default not be delegated to the target bean,
+	relying on the Spring application context to manage the lifecycle of that bean.
+	Specifying the "targetFilterLifecycle" filter init-param as "true" will
+	enforce invocation of the Filter.init and Filter.destroy lifecycle methods on the target bean,
+	letting the servlet container manage the filter lifecycle.
+
+	As of Spring 3.1,
+	DelegatingFilterProxy has been updated to optionally accept constructor parameters when using Servlet 3.0's instance-based filter registration methods,
+	usually in conjunction with Spring 3.1's WebApplicationInitializer SPI.
+	These constructors allow for providing the delegate Filter bean directly, or providing the application context and bean name to fetch,
+	avoiding the need to look up the application context from the ServletContext.
+
+	This class was originally inspired by Spring Security's FilterToBeanProxy class, written by Ben Alex.-->
+	<filter>
+		<filter-name>shiroFilter</filter-name>
+		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+		<init-param>
+			<param-name>targetFilterLifecycle</param-name>
+			<param-value>true</param-value>
+			<!--↑ 【targetFilterLifecycle】whether to invoke the Filter.init and Filter.destroy lifecycle methods on the target bean.
+                Default is "false"; target beans usually rely on the Spring application context for managing their lifecycle.
+                Setting this flag to "true" means that
+                the servlet container will control the lifecycle of the target Filter, with this proxy delegating the corresponding calls.-->
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>shiroFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- PageCache, cache .html suffix.
+	<filter>
+		<filter-name>PageCacheFilter</filter-name>
+		<filter-class>com.thinkgem.jeesite.common.filter.PageCachingFilter</filter-class>
+		<init-param>
+			<param-name>cacheName</param-name>
+			<param-value>pageCachingFilter</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>PageCacheFilter</filter-name>
+		<url-pattern>/</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>PageCacheFilter</filter-name>
+		<url-pattern>*.html</url-pattern>
+	</filter-mapping>-->
+
+	<!-- SiteMesh -->
+	<filter>
+		<filter-name>sitemeshFilter</filter-name>
+		<filter-class>com.opensymphony.sitemesh.webapp.SiteMeshFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>sitemeshFilter</filter-name>
+		<url-pattern>/a/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>sitemeshFilter</filter-name><!--【扣，有空试】这...一定要分成两个filter-mapping写吗？多个url-pattern在一个filter-mapping中不行么？-->
+		<url-pattern>/f/*</url-pattern>
+	</filter-mapping>
+	
+	<!-- MVC Servlet -->
+	<servlet>
+		<servlet-name>springServlet</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath*:/spring-mvc*.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>springServlet</servlet-name>
+		<url-pattern>/</url-pattern>	<!--【扣】这就引出一个问题：/ 与 /* 的区别(前面shiro filter就是用的 /* )？  另外 ant-style的 /** 支持不？Spring的@RequestMapping是支持ant-style path的...-->
+										<!--查阅servlet spec：A string containing only the ’/’ character indicates the "default" servlet of the application.
+															 In this case the servlet path is the request URI minus the context path and the path info is null.
+
+															 ...every request URI matches the ‘/*’ URL pattern-->
+	</servlet-mapping>
+
+	<!-- Activiti diagram-view callback filter-->
+	<filter>
+		<filter-name>JSONPFilter</filter-name>
+		<filter-class>com.thinkgem.jeesite.modules.act.rest.servlet.JsonpCallbackFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>JSONPFilter</filter-name>
+		<url-pattern>/act/service/*</url-pattern>
+	</filter-mapping>
+
+	<!-- DruidStatView -->
+	<servlet>
+		<servlet-name>DruidStatView</servlet-name>
+		<servlet-class>com.alibaba.druid.support.http.StatViewServlet</servlet-class>
+		<init-param>
+			<param-name>allow</param-name>
+			<param-value>127.0.0.1</param-value>
+		</init-param>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>DruidStatView</servlet-name>
+		<url-pattern>/druid/*</url-pattern>
+	</servlet-mapping>
+	
+	<!-- CKFinder -->
+	<servlet>
+		<servlet-name>CKFinderConnectorServlet</servlet-name>
+		<servlet-class>com.thinkgem.jeesite.common.web.CKFinderConnectorServlet</servlet-class><!--继承com.ckfinder.connector.ConnectorServlet-->
+		<init-param>
+			<param-name>XMLConfig</param-name>
+			<param-value>/WEB-INF/ckfinder.xml</param-value>
+		</init-param>
+		<init-param>
+			<param-name>debug</param-name>
+			<param-value>false</param-value>
+		</init-param>
+		<init-param>
+			<param-name>configuration</param-name>
+			<param-value>com.thinkgem.jeesite.common.web.CKFinderConfig</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup><!--【鸣】同load-on-startup value的servlet间的先后选择，由container自行决定...-->
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>CKFinderConnectorServlet</servlet-name>
+		<url-pattern>/static/ckfinder/core/connector/java/connector.java</url-pattern>
+	</servlet-mapping>
+	<filter>
+		<filter-name>FileUploadFilter</filter-name>
+	<!--File Upload Filter(Removed in CKFinder 2.6) Note: the flash upload component has been completely removed in CKFinder 2.6.！！！！！！！
+		As a result, the FileUploadFilter is no longer included in CKFinder.-->
+	<!--As described in the 【Flash Upload Problem】 section of the Troubleshooting article,
+		if you are using the Flash multiple file upload component together with session-based authentication,
+		you might get some "missing cookies" problems when trying to upload files.
+		To work around this Flash bug you have to take care of posting cookies yourself. On server side this is done by setting a FileUploadFilter:-->
+		<filter-class>com.ckfinder.connector.FileUploadFilter</filter-class>
+	<!--two optional configuration parameters which help to identify "authentication cookies" that need to be rewritten.
+		Those parameters are the name of the session cookie (sessionCookieName), which in Java defaults to the JSESSIONID value, and
+		                     the name of the session path parameter (sessionParameterName), which in Java defaults to jsessionid.
+		These parameters are optional and can be omitted.
+		However, if you are using custom configuration and you have changed names for these session identifiers on your server,
+		         you should also specify them in the FileUploadFilter init parameters so that CKFinder would know what to rewrite.-->
+		<init-param>
+			<param-name>sessionCookieName</param-name>
+			<param-value>JSESSIONID</param-value>
+		</init-param>
+		<init-param>
+			<param-name>sessionParameterName</param-name>
+			<param-value>jsessionid</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>FileUploadFilter</filter-name>
+		<url-pattern>/static/ckfinder/core/connector/java/connector.java</url-pattern><!--★a mapping applying the filter to a specific URL (it has to be the same mapping as for ConnectorServlet)↑-->
+	</filter-mapping>
+
+	<!-- Userfiles download -->
+	<servlet>
+	  	<servlet-name>UserfilesDownloadServlet</servlet-name>
+	  	<servlet-class>com.thinkgem.jeesite.common.servlet.UserfilesDownloadServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+	  	<servlet-name>UserfilesDownloadServlet</servlet-name>
+	  	<url-pattern>/userfiles/*</url-pattern>
+	</servlet-mapping>
+	
+	<!-- Validate code --><!--验证码servlet-->
+	<servlet>
+		<servlet-name>ValidateCodeServlet</servlet-name>
+		<servlet-class>com.thinkgem.jeesite.common.servlet.ValidateCodeServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>ValidateCodeServlet</servlet-name>
+		<url-pattern>/servlet/validateCodeServlet</url-pattern>
+	</servlet-mapping>
+	
+	<!-- FineReport 
+	<servlet>
+		<servlet-name>ReportServer</servlet-name>
+		<servlet-class>com.fr.web.ReportServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>ReportServer</servlet-name>
+		<url-pattern>/ReportServer</url-pattern>
+	</servlet-mapping>-->
+	
+	<!-- [INSERT FRAGMENT HERE] -->
+
+	<!-- Session configure, to "jeesite.properties" file "session.sessionTimeout" parameter.
+	<session-config>
+		<session-timeout>30</session-timeout>
+	</session-config>-->
+
+	<!-- Error page -->
+	<!-- <error-page>
+		<exception-type>java.lang.Throwable</exception-type>
+		<location>/WEB-INF/views/error/500.jsp</location>
+	</error-page> -->
+	<error-page>
+		<error-code>500</error-code>
+		<location>/WEB-INF/views/error/500.jsp</location>
+	</error-page>
+	<error-page>
+		<error-code>404</error-code>
+		<location>/WEB-INF/views/error/404.jsp</location>
+	</error-page>
+
+</web-app>
